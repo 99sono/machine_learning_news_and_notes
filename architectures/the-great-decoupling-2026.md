@@ -137,16 +137,39 @@ The real limiter in 2026 is **memory bandwidth**, not raw FLOPs.
 
 ---
 
+Here’s the **cleaned-up and fixed** "Further Reading & Citations" section with direct, working Markdown links for every resource (arXiv abstract, PDF where available, GitHub, project pages, HF models, etc.). I’ve made them consistent, clickable, and properly formatted.
+
 ### Further Reading & Citations
-* **Kimi Linear:** K Team (2025). *Kimi Linear: An Expressive, Efficient Attention Architecture.* arXiv:2510.26692. https://arxiv.org/abs/2510.26692 | PDF: https://arxiv.org/pdf/2510.26692 | GitHub: https://github.com/MoonshotAI/Kimi-Linear | HF Models: https://huggingface.co/moonshotai/Kimi-Linear-48B-A3B-Instruct  
-* **Prefill-as-a-Service:** Kimi Team (2026). *Prefill-as-a-Service: KVCache of Next-Generation Models Could Go Cross-Datacenter.* arXiv:2604.15039. https://arxiv.org/abs/2604.15039  
-* **TriAttention:** Mao et al. (2026). *Efficient Long Reasoning with Trigonometric KV Compression.* arXiv:2604.04921. [GitHub](https://github.com/WeianMao/triattention) | [Project Page](https://weianmao.github.io/tri-attention-project-page/) | [Hugging Face](https://huggingface.co/papers/2604.04921).  
-* **TurboQuant:** Google Research (2026). *Online Vector Quantization for LLM Compression.* arXiv:2504.19874.  
-* **MiMo-V2-Flash:** Fuli Luo, Xiao et al. (2026). *MiMo-V2-Flash Technical Report.* arXiv:2601.02780.  
-* **Nemotron-3-Nano:** NVIDIA (2025). *Nemotron 3 Nano: Open, Efficient Mixture-of-Experts Hybrid Mamba-Transformer Model.* arXiv:2512.20848.  
-* **xLSTM:** Beck et al. (2024). *xLSTM: Extended Long Short-Term Memory.* arXiv:2405.04517.  
-* **MEMENTO:** Kontonis et al. (2026). *MEMENTO: Teaching LLMs to Manage Their Own Context.* arXiv:2604.09852.  
-* **DeepSeek-V3 MLA:** DeepSeek-AI (2024/2025). *DeepSeek-V3 Technical Report.* Multi-Head Latent Attention — ~10–15× KV cache reduction (93.3% in V2/V3) while exceeding MHA modeling capacity. arXiv:2412.19437.
+
+* **Kimi Linear:** K Team (2025). *Kimi Linear: An Expressive, Efficient Attention Architecture.*  
+  [arXiv:2510.26692](https://arxiv.org/abs/2510.26692) | [PDF](https://arxiv.org/pdf/2510.26692) | [GitHub](https://github.com/MoonshotAI/Kimi-Linear) | [Hugging Face Models](https://huggingface.co/moonshotai/Kimi-Linear-48B-A3B-Instruct)
+
+* **Prefill-as-a-Service:** Kimi Team (2026). *Prefill-as-a-Service: KVCache of Next-Generation Models Could Go Cross-Datacenter.*  
+  [arXiv:2604.15039](https://arxiv.org/abs/2604.15039) | [PDF](https://arxiv.org/pdf/2604.15039)
+
+* **TriAttention:** Mao et al. (2026). *Efficient Long Reasoning with Trigonometric KV Compression.*  
+  [arXiv:2604.04921](https://arxiv.org/abs/2604.04921) | [PDF](https://arxiv.org/pdf/2604.04921) | [GitHub](https://github.com/WeianMao/triattention) | [Project Page](https://weianmao.github.io/tri-attention-project-page/) | [Hugging Face Paper](https://huggingface.co/papers/2604.04921)
+
+* **TurboQuant:** Google Research (2026). *Online Vector Quantization for LLM Compression.*  
+  [arXiv:2504.19874](https://arxiv.org/abs/2504.19874) | [PDF](https://arxiv.org/pdf/2504.19874)
+
+* **MiMo-V2-Flash:** Fuli Luo, Xiao et al. (2026). *MiMo-V2-Flash Technical Report.*  
+  [arXiv:2601.02780](https://arxiv.org/abs/2601.02780) | [PDF](https://arxiv.org/pdf/2601.02780)
+
+* **Nemotron-3-Nano:** NVIDIA (2025). *Nemotron 3 Nano: Open, Efficient Mixture-of-Experts Hybrid Mamba-Transformer Model.*  
+  [arXiv:2512.20848](https://arxiv.org/abs/2512.20848) | [PDF](https://arxiv.org/pdf/2512.20848)
+
+* **xLSTM:** Beck et al. (2024). *xLSTM: Extended Long Short-Term Memory.*  
+  [arXiv:2405.04517](https://arxiv.org/abs/2405.04517) | [PDF](https://arxiv.org/pdf/2405.04517)
+
+* **MEMENTO:** Kontonis et al. (2026). *MEMENTO: Teaching LLMs to Manage Their Own Context.*  
+  [arXiv:2604.09852](https://arxiv.org/abs/2604.09852) | [PDF](https://arxiv.org/pdf/2604.09852)
+
+* **DeepSeek-V3 MLA:** DeepSeek-AI (2024/2025). *DeepSeek-V3 Technical Report.*  
+  Multi-Head Latent Attention — ~10–15× KV cache reduction (93.3% in V2/V3) while exceeding MHA modeling capacity.  
+  [arXiv:2412.19437](https://arxiv.org/abs/2412.19437) | [PDF](https://arxiv.org/pdf/2412.19437)
+
+
 
 ---
 
