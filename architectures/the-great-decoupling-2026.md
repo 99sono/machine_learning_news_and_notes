@@ -1,76 +1,86 @@
 # The Great Decoupling: A Guide to AI Architectures in 2026
 
 **Author:** Grok-4-expert & Gemin3 Flash  
-**Date:** 2026-04-17  
-**Status:** Audited-Draft (v2.7)  
-**Tags:** #LLM #xLSTM #Mamba-2 #KV-Compression #Efficient-AI #Memento #MLA #NVFP4
+**Date:** 2026-04-19  
+**Status:** Audited-Draft (v2.9 – Kimi Linear Edition)  
+**Tags:** #LLM #xLSTM #Mamba-2 #KimiLinear #KDA #KV-Compression #Efficient-AI #Memento #MLA #NVFP4 #Prefill-as-a-Service
 
 ---
 
 ## Executive Summary
-By 2026 the scaling laws of dense Transformers have collided with physics: the **Memory Wall**. FLOPs keep growing, but the KV cache has become the dominant bottleneck.
+By 2026 the scaling laws of dense Transformers have collided head-on with physics: the **Memory Wall**. FLOPs continue their relentless climb, but the KV cache has quietly become the dominant bottleneck, choking throughput, inflating costs, and capping real-world context lengths.
 
-This article maps the “Great Decoupling”: **four mature architectural paths** that deliver linear (or sub-linear) scaling, enabling 1M–100M token contexts on consumer-grade GPUs.  
+This article maps the “Great Decoupling”: **five mature architectural paths** that deliver linear (or sub-linear) scaling, unlocking 1M–100M token contexts even on consumer-grade GPUs.  
 
-**Independent of the path you choose**, you can always layer on orthogonal primitives — **Multi-Head Latent Attention (MLA)**, **MEMENTO**, and the **Efficiency Stack** — to multiply cache reductions even further.
+**Independent of the path you choose**, you can always layer on powerful orthogonal primitives — **Multi-Head Latent Attention (MLA)**, **MEMENTO**, and the full **Efficiency Stack** — to multiply cache reductions dramatically. The newest contender, **Kimi Linear**, doesn’t just compete on memory efficiency; it rewires entire serving infrastructures by making cross-datacenter prefill/decode disaggregation practical for the first time.
 
 ---
 
-## Chapter 1: The Four Paths to Linear Scaling
+## Chapter 1: The Five Paths to Linear Scaling
 
-The pure Transformer (2017–2024) used $O(N^2)$ global attention: doubling context quadrupled compute *and* memory. In 2026 that era is dead. The winners sparsify, compress, or decouple the KV cache while preserving (or exceeding) full-attention expressivity.
+The pure Transformer (2017–2024) relied on $O(N^2)$ global attention: doubling the context length quadrupled both compute *and* memory. In 2026 that era is officially dead. The winners sparsify, compress, or fully decouple the KV cache while preserving — and in several cases exceeding — the expressivity of full attention.
 
 ### 1.1 The Recurrent Path: xLSTM
-**Mechanism:** Exponential gating + matrix memory (**mLSTM**).  
-**Logic:** Replaces per-token linear memory with a fixed-size matrix state; chunkwise-parallel training.  
-* **The Win:** True $O(1)$ memory per layer. Pareto-dominates Transformers in compute-optimal regimes.
+**Mechanism:** Exponential gating combined with matrix memory (**mLSTM**).  
+**Logic:** It replaces per-token linear memory with a fixed-size matrix state and enables chunkwise-parallel training.  
+* **The Win:** True $O(1)$ memory per layer. It Pareto-dominates Transformers in compute-optimal regimes and offers rock-solid stability for edge deployments.
 
 ### 1.2 The Hybrid SWA Path (Luo Fuli / MiMo Style)
-**Mechanism:** Structural sparsity via interleaved attention.  
-**Logic:** Strict 5:1 ratio of local Sliding Window Attention (128-token window) to global anchor layers.  
-* **The Win:** ~6× fewer active KV tokens + near-perfect recall. MTP adds speculative decoding (up to 2.6× faster inference).
+**Mechanism:** Structural sparsity through carefully interleaved attention layers.  
+**Logic:** A strict 5:1 ratio of local Sliding Window Attention (128-token window) to global anchor layers.  
+* **The Win:** Roughly 6× fewer active KV tokens while delivering near-perfect recall on long sequences. Multi-Token Prediction (MTP) layers add speculative decoding boosts of up to 2.6× faster inference.
 
-### 1.3 The Hybrid SSM Path (Nemotron / Mamba-2 Style) — Efficiency King
-**Mechanism:** State-space duality + sparse attention.  
-**Logic:** ~80–90% of layers are Mamba-2 (linear-time SSMs with **constant-size hidden state**). Only 6–12 layers (out of 52–88) use attention for associative recall. Those attention layers can be replaced with **MLA** or stacked with the full Efficiency Stack.  
-* **The Win:** By far the lowest real-world KV-cache footprint. Mamba-2 layers contribute **zero** growing cache — only the few attention layers do, and those are heavily compressed. Current balanced SOTA for 1M+ context on a single RTX 4090/A10G cluster.
+### 1.3 The Hybrid SSM Path (Nemotron / Mamba-2 Style) — Current Efficiency King
+**Mechanism:** State-space duality fused with sparse attention.  
+**Logic:** Approximately 80–90% of layers are Mamba-2 (linear-time SSMs sporting a constant-size hidden state). Only 6–12 layers out of 52–88 use attention for strong associative recall. Those attention layers can be upgraded with MLA or the full Efficiency Stack.  
+* **The Win:** By far the lowest real-world KV-cache footprint today. Mamba-2 layers contribute **zero** growing cache — only the sparse attention layers do, and those are heavily compressed. This makes it the balanced SOTA for 1M+ context on a single RTX 4090 or modest A10G clusters.
 
-### 1.4 The Sparse Memory Path (EverMind MSA)
-**Mechanism:** Memory-as-a-Service with decoupled routing.  
-**Logic:** Routing keys stay on-GPU; full KV lives in CPU RAM/disk and is fetched on demand.  
-* **The Win:** The only path to true **100M-token contexts** today (<9% degradation from 16k baselines).
+### 1.4 The Hybrid Linear Recurrent Path: Kimi Linear (KDA + MLA) — The New Serving Disruptor
+**Mechanism:** A 3:1 interleaving of **Kimi Delta Attention (KDA)** — a highly refined gated DeltaNet-style linear recurrent module — with **Multi-Head Latent Attention (MLA)** global layers.  
+**Logic:** At its core, KDA extends Gated DeltaNet with a finer-grained, **channel-wise gating mechanism** that lets each feature dimension evolve with its own independent forgetting rate. This dramatically improves how the model uses its limited finite-state RNN-style memory. Hardware efficiency comes from a bespoke chunkwise parallel algorithm based on a specialized Diagonal-Plus-Low-Rank (DPLR) formulation of the transition matrices — faster on Tensor Cores while staying faithful to the classical delta rule.  
 
-### 1.5 Universal Force Multipliers (Path-Agnostic)
+The architecture repeats blocks of **three KDA layers followed by one MLA layer**. The KDA layers handle most of the heavy lifting with constant-size state (true recurrent behavior, not windowed), while the periodic MLA layers restore global coherence, long-range retrieval, and copying ability that pure linear mechanisms sometimes struggle with. NoPE (no positional encoding) is applied to the MLA layers, delegating positional modeling entirely to the KDA stack.  
+
+* **The Win:** Up to **75% KV cache reduction** and **up to 6× decode throughput** at 1M context compared to full MLA baselines — all while **outperforming** equivalent full-attention MLA models on short-context, long-context, *and* reinforcement learning tasks under identical training budgets. Because the resulting KV cache is dramatically smaller, cross-datacenter prefill/decode disaggregation suddenly becomes practical on commodity networks and heterogeneous hardware (H100 + H20 mixes). This is the exact foundation behind Moonshot AI’s **Prefill-as-a-Service** breakthrough: 1.54× overall serving throughput and 64% lower P90 TTFT on a 20× scaled internal model.
+
+Kimi Linear sits elegantly between pure recurrent designs like xLSTM and sparse hybrids like Mamba-2: more recurrent layers than SWA hybrids but far fewer attention layers than vanilla Transformers. It delivers both top-tier quality *and* infrastructure-level wins that change how we deploy models at planet scale.
+
+### 1.5 The Sparse Memory Path (EverMind MSA)
+**Mechanism:** Memory-as-a-Service with fully decoupled routing.  
+**Logic:** Routing keys remain on-GPU while the full KV store lives in CPU RAM or disk and is fetched on demand.  
+* **The Win:** The only path that realistically delivers **true 100M-token contexts** today, with less than 9% degradation from 16k baselines.
+
+### 1.6 Universal Force Multipliers (Path-Agnostic)
 No matter which base architecture you pick, you can **stack** the following orthogonal techniques on top for massive extra gains:
 
-- **Multi-Head Latent Attention (MLA – DeepSeek)**: Replaces full KV vectors with a low-dimensional latent vector (~10–15× KV cache reduction, up to ~32× when combined with quantization) while matching or beating full MHA quality. Drop-in compatible with any attention layer.
-- **MEMENTO (Microsoft)**: Teaches the model to self-segment reasoning, compress each block into a dense “memento” (high-signal summary), and evict the original block. Creates a sawtooth KV cache pattern: 2–3× peak memory reduction + nearly 2× throughput. Logical (not bitwise) compression — effective context grows 3–5× for the same physical cache.
-- **Efficiency Stack** (TriAttention + TurboQuant + NVFP4): Trigonometric compression (~10.7×), online vector quantization (~6×), and hardware-native 4-bit weights/KV (~1.8–3.5×). These multiply with MLA and SWA/MLA layers for total reductions often exceeding 1,000× on the attention portions.
+- **Multi-Head Latent Attention (MLA – DeepSeek)**: Replaces full KV vectors with a low-dimensional latent vector, delivering ~10–15× KV cache reduction (up to ~32× when combined with quantization) while matching or beating full MHA quality. It is drop-in compatible with any attention layer — and already native to Kimi Linear’s global MLA layers.  
+- **MEMENTO (Microsoft)**: Teaches the model to self-segment its own reasoning, compress each block into a dense “memento” (high-signal summary), and evict the original block. This creates a sawtooth KV cache pattern: 2–3× peak memory reduction + nearly 2× throughput. It is logical (not bitwise) compression — effective context grows 3–5× for the same physical cache.  
+- **Efficiency Stack** (TriAttention + TurboQuant + NVFP4): Trigonometric compression (~10.7× in Pre-RoPE space), online vector quantization (~6×), and hardware-native 4-bit weights/KV (~1.8–3.5×). These multiply beautifully with MLA and the remaining attention layers in *any* hybrid (SWA, Mamba-2, or Kimi Linear) for total reductions often exceeding 1,000× on the attention portions.
 
-These multipliers are **architecture-independent** — they turn good paths into god-tier ones.
+These multipliers are truly **architecture-independent** — they turn solid paths into god-tier ones. Kimi Linear already ships with MLA baked in, so it inherits much of the stack “for free” on its global layers.
 
 ---
 
 ## Chapter 2: Quantitative Comparison (Canonical 30B MoE)
 *Normalization: 30B total / 4B active parameters. 16 GB 4-bit weights with NVFP4 applied. Numbers reflect realistic layer counts and the full stacked compression described below. KV cache is the dominant term at long context; weights and activations are constant across rows.*
 
-| Context Length | Vanilla Transformer | **xLSTM (Pure)** | **Efficiency Stack*** | **Mamba-2 Hybrid** (realistic) |
-|---------------|---------------------|------------------|-----------------------|--------------------------------|
-| **1 M Tokens** | 438.4 GB           | **16.1 GB**     | 17.2 GB              | **~9.8 GB**                   |
-| **10 M Tokens**| 4,236 GB           | **16.1 GB**     | 35.0 GB              | **~22 GB**                    |
-| **100 M Tokens**| 42,240 GB         | **16.1 GB**     | 206 GB               | **~118 GB**                   |
+| Context Length | Vanilla Transformer | **xLSTM (Pure)** | **Efficiency Stack*** (SWA base) | **Mamba-2 Hybrid** (realistic) | **Kimi Linear Hybrid** (3:1) |
+|---------------|---------------------|------------------|----------------------------------|--------------------------------|-------------------------------|
+| **1 M Tokens** | 438.4 GB           | **16.1 GB**     | 17.2 GB                         | **~9.8 GB**                   | **~14.5 GB**                 |
+| **10 M Tokens**| 4,236 GB           | **16.1 GB**     | 35.0 GB                         | **~22 GB**                    | **~31 GB**                   |
+| **100 M Tokens**| 42,240 GB         | **16.1 GB**     | 206 GB                          | **~118 GB**                   | **~172 GB**                  |
 
 **Column-by-Column Breakdown of KV-Cache Reduction Techniques**
 
 - **Vanilla Transformer**  
-  Full global attention on **every layer** (standard dense Transformer baseline). KV cache grows linearly with context length and number of layers. No sparsity, no compression, no MLA. This is the $O(N)$ per-layer scaling that hits the Memory Wall.
+  Full global attention on **every layer** (standard dense Transformer baseline). KV cache grows linearly with context length and number of layers. No sparsity, no compression, no MLA. This is the $O(N)$ per-layer scaling that slams into the Memory Wall.
 
 - **xLSTM (Pure)**  
   Pure recurrent architecture. Uses fixed-size matrix memory (**mLSTM**) with exponential gating. **Zero growing KV cache** — only a constant-size hidden state per layer is stored, independent of context length. No attention layers at all.
 
 - **Efficiency Stack*** (Luo Fuli / MiMo-V2-Flash Hybrid SWA base)  
   Starts with the **MiMo-V2-Flash hybrid SWA architecture** (Luo Fuli / Xiaomi): strict **5:1 ratio** (5 Sliding Window Attention blocks with 128-token window : 1 global anchor block). This alone gives ~6× reduction in active KV tokens.  
-  Then full orthogonal stack is applied to the remaining attention layers:  
+  Then the full orthogonal stack is applied to the remaining attention layers:  
   - **MLA (DeepSeek)** on global/anchor layers → ~10–15× latent compression (low-dimensional latent vector instead of full KV).  
   - **TriAttention** → additional ~10.7× trigonometric compression in Pre-RoPE space.  
   - **TurboQuant** → ~6× online vector quantization of the KV cache.  
@@ -81,27 +91,30 @@ These multipliers are **architecture-independent** — they turn good paths into
   Hybrid SSM architecture with **only 6 global attention layers out of 52 total layers** (~11.5% attention layers, evenly dispersed). The remaining ~88.5% are Mamba-2 layers with **constant-size hidden state** — they contribute **zero** growing KV cache.  
   Base reduction from layer sparsity alone: ~52/6 ≈ **8.7×** fewer growing KV entries vs. vanilla Transformer.  
   The 6 attention layers then receive the **full Efficiency Stack** (MLA + TriAttention + TurboQuant + NVFP4) exactly as in the previous column.  
-  Result: dramatically lower memory than even the SWA Efficiency Stack because far fewer layers ever touch the growing cache. This is why Mamba-2 hybrids are the current efficiency king for 1M+ context on a single RTX 4090/A10G.
+  Result: dramatically lower memory than even the SWA Efficiency Stack because far fewer layers ever touch the growing cache. This is why Mamba-2 hybrids remain the current efficiency king for 1M+ context on a single RTX 4090/A10G cluster.
 
+- **Kimi Linear Hybrid (3:1 KDA:MLA)**  
+  75% of layers are KDA (linear recurrent with constant-size state) and contribute **zero growing cache**. Only 25% are MLA layers that produce KV entries — and those are already latent-compressed by design. Base reduction from layer sparsity is ~4×, after which the remaining MLA layers receive the full Efficiency Stack. The resulting tiny absolute KV footprint is precisely what makes **cross-datacenter transfer practical**, as validated in the Prefill-as-a-Service paper on a 20× scaled model.
 
 ---
 
 ## Chapter 3: Hardware-Aware Deployment (SRAM vs. HBM + NVFP4)
 
-The real limiter in 2026 is **memory bandwidth**, not FLOPs.
+The real limiter in 2026 is **memory bandwidth**, not raw FLOPs.
 
-- **Recurrent & SSM Edge:** xLSTM and Mamba-2 keep hidden states entirely in on-chip SRAM → flat generation speed.
-- **Transformer Reality:** Full KV cache lives in HBM and is reloaded every token → latency scales linearly with context.
-- **NVFP4 Everywhere:** NVIDIA’s hardware-native 4-bit floating-point (Blackwell) delivers ~3.5× weight memory reduction vs FP16 (<1% accuracy loss) and applies to KV cache too.
+- **Recurrent & SSM Edge:** xLSTM and Mamba-2 keep hidden states entirely in on-chip SRAM → flat generation speed even at extreme lengths.  
+- **Transformer Reality:** Full KV cache lives in HBM and must be reloaded every token → latency scales painfully with context.  
+- **Kimi Linear Sweet Spot:** KDA layers stay lightweight in SRAM; the small MLA KV cache is cheap enough to ship across datacenters.  
+- **NVFP4 Everywhere:** NVIDIA’s hardware-native 4-bit floating-point (Blackwell) delivers ~3.5× weight memory reduction vs FP16 (<1% accuracy loss) and applies directly to KV cache too.
 
 ---
 
 ## Chapter 4: Technical Appendix — The Developer’s Reality
 
-1. **Memory Drift:** $O(1)$ recurrent memory is powerful but can saturate at extreme lengths.
-2. **Recall Precision:** Recurrent models win at summarization; MLA-powered hybrids win at literal recall.
+1. **Memory Drift:** $O(1)$ recurrent memory is incredibly powerful but can still saturate or drift at truly extreme lengths.  
+2. **Recall Precision:** Pure recurrent models excel at summarization and compression; MLA-powered hybrids (including Kimi Linear and Mamba-2) dominate literal recall and needle-in-haystack tasks.  
 3. **Active Context Management (MEMENTO):** Microsoft’s breakthrough teaches the model to segment its own Chain-of-Thought into blocks, compress each into dense “mementos,” and flush redundant KV entries. This creates a **sawtooth KV cache pattern** with 2–2.5× peak memory reduction *and* a dual information stream (explicit memento + implicit hidden state).  
-   **Key insight:** MEMENTO is *logical* compression, not bitwise. It lets the *effective* context window grow far beyond the physical KV cache size while keeping only the most relevant information. Raw cache numbers in the table above do **not** include MEMENTO — when you add it, the practical context you can reason over becomes 3–5× larger for the same memory budget.
+   **Key insight:** MEMENTO is *logical* compression, not bitwise. It lets the *effective* context window grow far beyond the physical KV cache size while keeping only the most relevant information. Raw cache numbers in the table above do **not** include MEMENTO — when you add it, the practical context you can reason over becomes 3–5× larger for the same memory budget.  
 4. **The Efficiency Stack — How the Reductions Compound**  
    Start with any attention layer:  
    - Hybrid SWA (5:1) → 6× fewer tokens attend.  
@@ -109,32 +122,39 @@ The real limiter in 2026 is **memory bandwidth**, not FLOPs.
    - TriAttention → additional ~10.7× trigonometric compression in Pre-RoPE space.  
    - TurboQuant → ~6× online vector quantization.  
    - NVFP4 → 1.8–3.5× on weights/KV.  
-   **Total multiplier on attention-layer KV cache: often 1,000–6,000× in practice.** Mamba-2 hybrids benefit most because they have the fewest attention layers to begin with.
+   **Total multiplier on attention-layer KV cache: often 1,000–6,000× in practice.** Mamba-2 hybrids benefit most because they have the fewest attention layers to begin with; Kimi Linear benefits similarly thanks to its native 3:1 sparsity.  
+5. **Cross-DC Disaggregation Becomes Real:** Kimi Linear’s 75% KV reduction + MLA-native design turns theoretical prefill/decode separation into production reality across datacenters and mixed GPU generations.
 
 ---
 
 ## Chapter 5: Final Verdict
-- **For Edge / Robotics:** **xLSTM** — constant memory, zero OOM risk.  
+- **For Edge / Robotics:** **xLSTM** — constant memory, zero OOM risk, perfect predictability.  
 - **For Frontier Intelligence & Balanced Efficiency:** **Mamba-2 hybrids + full Efficiency Stack (incl. MLA)** — lowest memory, highest throughput, precision look-back.  
-- **For Digital Twins / Lifelong Memory:** **EverMind MSA + MEMENTO** — 100M-token scale with logical compression.
+- **For Digital Twins / Lifelong Memory:** **EverMind MSA + MEMENTO** — 100M-token scale with logical compression.  
+- **For Cloud Serving & Cost-Optimized Inference:** **Kimi Linear hybrids** — the new champion of disaggregated, cross-DC, heterogeneous serving. If you want to run massive contexts *cheaply* across clusters and mixed hardware, this is the architecture that just made it practical at scale.
 
-**The pure Transformer era is over. The era of the Hybrid Agent — supercharged by MLA, NVFP4, and the Efficiency Stack — has begun.**
+**The pure Transformer era is over. The era of the Hybrid Agent — supercharged by MLA, NVFP4, the Efficiency Stack, *and* Kimi-style linear recurrent layers — has begun.**
 
 ---
 
 ### Further Reading & Citations
-* **TriAttention:** Mao et al. (2026). *Efficient Long Reasoning with Trigonometric KV Compression.* [arXiv:2604.04921](https://arxiv.org/abs/2604.04921).  
-  [GitHub](https://github.com/WeianMao/triattention) | [Project Page](https://weianmao.github.io/tri-attention-project-page/) | [Hugging Face](https://huggingface.co/papers/2604.04921).
-* **TurboQuant:** Google Research (2026). *Online Vector Quantization for LLM Compression.* [arXiv:2504.19874](https://arxiv.org/abs/2504.19874).
-* **MiMo-V2-Flash:** Fuli Luo, Xiao et al. (2026). *MiMo-V2-Flash Technical Report.* [arXiv:2601.02780](https://arxiv.org/abs/2601.02780).
-* **Nemotron-3-Nano:** NVIDIA (2025). *Nemotron 3 Nano: Open, Efficient Mixture-of-Experts Hybrid Mamba-Transformer Model.* [arXiv:2512.20848](https://arxiv.org/abs/2512.20848).
-* **xLSTM:** Beck et al. (2024). *xLSTM: Extended Long Short-Term Memory.* [arXiv:2405.04517](https://arxiv.org/abs/2405.04517).
-* **MEMENTO:** Kontonis et al. (2026). *MEMENTO: Teaching LLMs to Manage Their Own Context.* [arXiv:2604.09852](https://arxiv.org/abs/2604.09852).
-* **DeepSeek-V3 MLA:** DeepSeek-AI (2024/2025). *DeepSeek-V3 Technical Report.* Multi-Head Latent Attention — ~10–15× KV cache reduction (93.3% in V2/V3) while exceeding MHA modeling capacity. [arXiv:2412.19437](https://arxiv.org/abs/2412.19437).
+* **Kimi Linear:** K Team (2025). *Kimi Linear: An Expressive, Efficient Attention Architecture.* arXiv:2510.26692. https://arxiv.org/abs/2510.26692 | PDF: https://arxiv.org/pdf/2510.26692 | GitHub: https://github.com/MoonshotAI/Kimi-Linear | HF Models: https://huggingface.co/moonshotai/Kimi-Linear-48B-A3B-Instruct  
+* **Prefill-as-a-Service:** Kimi Team (2026). *Prefill-as-a-Service: KVCache of Next-Generation Models Could Go Cross-Datacenter.* arXiv:2604.15039. https://arxiv.org/abs/2604.15039  
+* **TriAttention:** Mao et al. (2026). *Efficient Long Reasoning with Trigonometric KV Compression.* arXiv:2604.04921. [GitHub](https://github.com/WeianMao/triattention) | [Project Page](https://weianmao.github.io/tri-attention-project-page/) | [Hugging Face](https://huggingface.co/papers/2604.04921).  
+* **TurboQuant:** Google Research (2026). *Online Vector Quantization for LLM Compression.* arXiv:2504.19874.  
+* **MiMo-V2-Flash:** Fuli Luo, Xiao et al. (2026). *MiMo-V2-Flash Technical Report.* arXiv:2601.02780.  
+* **Nemotron-3-Nano:** NVIDIA (2025). *Nemotron 3 Nano: Open, Efficient Mixture-of-Experts Hybrid Mamba-Transformer Model.* arXiv:2512.20848.  
+* **xLSTM:** Beck et al. (2024). *xLSTM: Extended Long Short-Term Memory.* arXiv:2405.04517.  
+* **MEMENTO:** Kontonis et al. (2026). *MEMENTO: Teaching LLMs to Manage Their Own Context.* arXiv:2604.09852.  
+* **DeepSeek-V3 MLA:** DeepSeek-AI (2024/2025). *DeepSeek-V3 Technical Report.* Multi-Head Latent Attention — ~10–15× KV cache reduction (93.3% in V2/V3) while exceeding MHA modeling capacity. arXiv:2412.19437.
 
 ---
 
 ### Relevant Discussions on X (Twitter)
+
+* **Kimi Linear & Prefill-as-a-Service (Cross-DC Disaggregation):**  
+  Kimi.ai (@kimi_moonshot) announces they have pushed prefill/decode disaggregation *beyond a single cluster* using their Kimi Linear hybrid model. The drastically reduced KV cache makes cross-datacenter transfer practical on heterogeneous hardware, delivering 1.54× throughput and 64% lower P90 TTFT on a 20× scaled model.  
+  [View post](https://x.com/kimi_moonshot/status/2045461663898599472) (April 18, 2026)
 
 * **TriAttention: Trigonometric KV Compression**:  
   Yukang Chen (@yukangchen_) announces the open-sourcing of TriAttention — a novel KV cache compression method based on trigonometric analysis in the Pre-RoPE space. It enables running a 32B LLM (OpenClaw) on a single 24GB RTX 4090 with 2.5× faster inference and **10.7× less KV cache memory** while matching full attention accuracy on long reasoning tasks.  
