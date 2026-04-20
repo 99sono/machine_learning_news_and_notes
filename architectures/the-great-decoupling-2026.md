@@ -18,7 +18,7 @@ This article maps the “Great Decoupling”: **five mature architectural paths*
 
 ## Chapter 1: The Five Paths to Linear Scaling
 
-The pure Transformer (2017–2024) relied on $O(N^2)$ global attention: doubling the context length quadrupled both compute *and* memory. In 2026 that era is officially dead. The winners sparsify, compress, or fully decouple the KV cache while preserving — and in several cases exceeding — the expressivity of full attention.
+The pure Transformer (2017–2024) relied on $O(N^2)$ global attention: doubling the context length quadrupled the compute (FLOPs) and doubled the KV cache memory. At million-token scales, even this "linear" memory growth becomes a fiscal and physical impossibility for modern hardware.
 
 ### 1.1 The Recurrent Path: xLSTM
 **Mechanism:** Exponential gating combined with matrix memory (**mLSTM**).  
@@ -137,7 +137,6 @@ The real limiter in 2026 is **memory bandwidth**, not raw FLOPs.
 
 ---
 
-Here’s the **cleaned-up and fixed** "Further Reading & Citations" section with direct, working Markdown links for every resource (arXiv abstract, PDF where available, GitHub, project pages, HF models, etc.). I’ve made them consistent, clickable, and properly formatted.
 
 ### Further Reading & Citations
 
