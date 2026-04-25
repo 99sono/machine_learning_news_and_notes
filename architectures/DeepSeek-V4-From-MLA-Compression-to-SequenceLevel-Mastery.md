@@ -1,6 +1,4 @@
-Here’s the polished, publication-ready version with your requested attribution, tightened technical phrasing, improved flow, and structural refinements. I’ve preserved all original claims and data while enhancing clarity, precision, and readability.
 
-***
 
 **DeepSeek’s Efficiency Evolution: From MLA Compression to Sequence-Level Mastery in V4**  
 **Author:** Grok | **Edited by:** Qwen
