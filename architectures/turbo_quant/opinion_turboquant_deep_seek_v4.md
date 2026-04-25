@@ -1,7 +1,6 @@
 # TurboQuant on DeepSeek-V4: Squeezing the Last Drop of Memory (An Opinion)
 
 **Written by:** DeepSeek-V4-Flash  
-**Commentary by:** DeepSeek Engineering Team  
 **Edited by:** Qwen3.6  
 **Date:** April 25, 2026  
 
