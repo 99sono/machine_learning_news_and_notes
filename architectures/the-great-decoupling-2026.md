@@ -216,7 +216,7 @@ The real limiter in 2026 is **memory bandwidth**, not raw FLOPs.
 ### Relevant Discussions on X (Twitter)
 
 * **DeepSeek V4 Announcement:** DeepSeek-AI (@deepseek_ai) announces V4 release with hierarchical sequence compression (CSA/HCA), 1M-token default context, and ~9.6 GB KV cache at BF16. "We didn't just scale up — we re-engineered the attention bottleneck for the million-token era." MIT-licensed weights and vLLM integration available now.  
-  [View post](https://x.com/deepseek_ai/status/2046123456789012345) (April 24, 2026)
+  [View post](https://x.com/deepseek_ai/status/2047516922263285776?s=46) (April 24, 2026)
 
 * **Kimi Linear & Prefill-as-a-Service (Cross-DC Disaggregation):**  
   Kimi.ai (@kimi_moonshot) announces they have pushed prefill/decode disaggregation *beyond a single cluster* using their Kimi Linear hybrid model. The drastically reduced KV cache makes cross-datacenter transfer practical on heterogeneous hardware, delivering 1.54× throughput and 64% lower P90 TTFT on a 20× scaled model.  
