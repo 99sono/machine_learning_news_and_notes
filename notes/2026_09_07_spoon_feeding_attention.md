@@ -183,9 +183,23 @@ $$
 * Token 1 (`"I"`) spends 20% of its attention on itself and 80% on `"love"`.
 * Token 2 (`"love"`) spends 10% of its attention on `"I"` and 90% on itself.
 
----
+*Read this grid like this:*
+* Token 1 (`"I"`) spends 20% of its attention on itself and 80% on `"love"`.
+* Token 2 (`"love"`) spends 10% of its attention on `"I"` and 90% on itself.
 
-> **A Quick Side Note:** This guide was co-authored with Gemini, who displayed the infinite patience of a saint while translating sterile transformer math into a world of speed-dating rich kids, Armani suits, and Aston Martins. If the equations look pristine, blame the framework; if it feels like a bizarre reality TV show, blame the human co-pilot.
+> **The Speed-Dating Reality Check:** 
+> But looking at it purely as academic percentages is too dry—let's translate that right back to our speed-dating event:
+> * **Row 1 (The Rich Kid):** That 20% self-attention cell is essentially the rich kid looking at himself and thinking, *"Yeah, I didn't come to speed-dating to meet myself."* But look at that heavy **80%** allocation on column 2: his search radar for the blonde babe hit the jackpot, and he is fully locked in.
+> * **Row 2 (The Bookworm Girl):** That tiny **10%** score pointing toward the rich kid shows she is totally put off by him—not even the Aston Martin could salvage the situation. Meanwhile, her **90%** self-attention score shows she walks out of the event thinking, *"Apparently my best match tonight was myself; better alone than in bad company."* :D
+
+
+> **Why This Matrix is Thrown Away (The Secret to the Decode Phase):**
+> Look closely at what just happened: this $N \times N$ compatibility matrix tells us how every token in the current prompt relates to every other token. But once that new token (`"you"`) is conjured and added to the sentence, **this entire speed-dating score matrix is thrown away**. 
+> * **The Old Queries Are Gone:** We no longer need the Queries ($Q$) of past tokens like `"I"` and `"love"` because their historical peer-to-peer relationships are already locked in stone.
+> * **The Newcomer Arrives:** When the decode phase begins, a brand-new token enters the speed-dating party. It generates its *own* fresh Query ($Q$), and it shoots that query straight at the **permanently cached Keys ($K$)** of all the past tokens. 
+> * **The Next Round:** Instead of re-running the whole party from scratch, the model only computes how the new token's Query matches against everyone already in the room, blending their **cached Values ($V$)** on the fly. That is why caching $K$ and $V$ saves GPUs from melting down!
+
+
 
 ---
 
