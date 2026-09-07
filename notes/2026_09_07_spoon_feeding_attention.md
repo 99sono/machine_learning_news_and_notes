@@ -70,7 +70,7 @@ Instead of processing all 4 dimensions in one giant, messy calculation, the mode
 First, Head 1 extracts its slice of the input tokens, creating our "baby input" matrix for Head 1:
 
 
-$$X_{\text{head1}} = \begin{pmatrix} 1 & 1 \\ 2 & 2 \end{pmatrix}$$
+$$X_{\text{head1}} = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix}$$
 
 ---
 
