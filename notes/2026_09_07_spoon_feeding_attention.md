@@ -39,8 +39,20 @@ Let's assign simple numerical values to our two words:
 
 We stack them together into our input matrix $X$ of size $2 \times 4$:
 
+$$
+X = \begin{pmatrix} 1 & 1 & 1 & 1 \\\\ 2 & 2 & 2 & 2 \end{pmatrix}
+$$
 
-$$X = \begin{pmatrix} 1 & 1 & 1 & 1 \\ 2 & 2 & 2 & 2 \end{pmatrix}$$
+
+**Note on Conventions:** Unadorned vectors like ($\mathbf{x}$) default to column vectors in pure linear algebra. However, transformer literature frequently treats them as row vectors when stacked into $X$, or uses explicit transposes ($\mathbf{x}^T$) for horizontal rows.
+test02
+
+In this layout, each row represents a separate token ($\mathbf{x}_1, \mathbf{x}_2$), which is the standard convention in deep learning frameworks where $X$ has shape $\text{Sequence Length} \times d_3{\text{model}}$. 
+
+
+If vectors are written without a transpose superscript ($\mathbf{x}$), they are conventionally treated as column vectors by default in pure linear algebra, but transformer literature frequently treats unadorned vectors as row vectors when stacked into $X$, or uses explicit transposes ($\mathbf{x}^T$) when writing them out as horizontal rows.
+
+
 
 ---
 
