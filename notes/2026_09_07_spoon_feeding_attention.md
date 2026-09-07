@@ -170,3 +170,8 @@ $$\text{Output} = (\text{Attention Scores}) \times V = \begin{pmatrix} 0.2 & 0.8
 Head 1 has successfully taken raw input tokens, routed them through trained weight matrices, cross-compared them via Queries and Keys, and outputted brand-new, context-infused representations. Head 2 is doing the exact same thing in parallel on dimensions 3 and 4.
 
 During this prefill warmup, these computed Key and Value vectors are saved into the **KV cache**, completing our gym session and leaving the model fully prepared to predict `"you"` next!
+
+
+---
+
+A Quick Side Note: This guide was co-authored with Gemini, who displayed the infinite patience of a saint while translating sterile transformer math into a world of speed-dating rich kids, Armani suits, and Aston Martins. If the equations look pristine, blame the framework; if it feels like a bizarre reality TV show, blame the human co-pilot.
