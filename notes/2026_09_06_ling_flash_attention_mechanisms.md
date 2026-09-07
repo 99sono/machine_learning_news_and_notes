@@ -47,8 +47,7 @@ $$\underbrace{[\text{Linear Attention Layer}] \times M}_{\text{Cheap propagation
 **Note: MLA does not alter theoretical asymptotic FLOP counts; it reduces memory bandwidth overhead during decoding.*
 
 ### Why NVIDIA Hardware Optimizes for Mamba-First
-
-* Mamba's hidden state is represented as a **compact vector** ($\mathbf{h}_t \in \mathbb{R}^{N_{\text{state}}}$ where $N_{\text{state}} \in [64, 128]$), allowing the entire recurrence state to reside directly within fast on-chip SRAM tiles.
+* Mamba's hidden state is represented as a **compact vector** ($\mathbf{h}_t \in \mathbb{R}^{N}$, where $N \in [64, 128]$), allowing the entire recurrence state to reside directly within fast on-chip SRAM tiles.
 * Scalar state-space transitions map cleanly onto hardware scalar execution units.
 * Conversely, KDA and GatedDeltaNet maintain a **full matrix** $S_t \in \mathbb{R}^{d_k \times d_v}$ per attention head, resulting in higher register pressure, larger memory footprints, and more complex tiling requirements.
 * Consequently, low-level compilation toolchains (e.g., cuDNN, TensorRT-LLM) natively prioritize Mamba-style state-space operator kernels.
