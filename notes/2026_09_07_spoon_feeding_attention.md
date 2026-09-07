@@ -74,18 +74,28 @@ $$X_{\text{head1}} = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix}$$
 
 ---
 
-## 3. The Trained Weight Matrices ($W_Q, W_K, W_V$)
+**3. The Trained Weight Matrices ($W_Q, W_K, W_V$)**
 
-During training, gradient descent tunes our weight matrices so they know how to route information. For Head 1, we have three weight matrices, each sized $2 \times 2$ (matching our 2-dimensional head subspace):
+During training, gradient descent tunes our weight matrices so they know how to route information. But before looking at their values, let's examine their **size and shape geometry**, which reveals a fascinating twist about how AI uses linear algebra compared to traditional math textbooks.
 
-* **$W_Q$ (Query Weights):** What this head is *looking for*.
-* **$W_K$ (Key Weights):** What each token *advertises* about itself.
-* **$W_V$ (Value Weights):** The actual *content payload* each token carries.
-
-Let's assume gradient descent successfully tuned Head 1's weight matrices to look like this:
+* **The Native Size Rule:** The native dimensions of these weight matrices are determined by the head subspace size, written as $d_k \times d_k$ (where $d_k = d_{\text{model}} / h$).
+* If our model had only a single attention head ($h = 1$), our total dimension would stay at $4$, meaning our weight matrices would have to be a monolithic **$4 \times 4$** block.
+* Because we chose **$h = 2$ attention heads**, our total dimension is sliced in half ($4 / 2 = 2$), shrinking each head's weight matrices down to a tidy **$2 \times 2$** grid.
 
 
-$$W_Q = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}, \quad W_K = \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix}, \quad W_V = \begin{pmatrix} 2 & 0 \\ 0 & 2 \end{pmatrix}$$
+* **The Traditional Math Paradox (Left vs. Right):** In standard linear algebra classes, if you want to transform a vector using a matrix, you typically write the matrix on the left and the vector on the right ($W \cdot \mathbf{x}$). But if you tried that with a single row token vector (shape $1 \times 2$) and a $2 \times 2$ weight matrix, standard math rules would break because the inner dimensions wouldn't match!
+* **The Deep Learning Solution (The Left-Side Rule):** Deep learning frameworks flip this convention entirely to make processing massive batches of tokens blazing fast on GPUs. Instead of putting the input on the right, **the input vector or matrix comes from the LEFT, and the weight matrix sits on the RIGHT.**
+* **Why This Works for Any Sequence Length:** Because of this left-side rule, our input matrix $X_{\text{head1}}$ acts as the driver. It has shape $N \times d_k$ (in our example, $2 \text{ tokens} \times 2 \text{ dimensions}$). When we post-multiply it by our $2 \times 2$ weight matrix, the dimensions match up perfectly:
+
+$$\underbrace{X_{\text{head1}}}_{(2 \times 2)} \times \underbrace{W_Q}_{(2 \times 2)} = \underbrace{Q}_{(2 \times 2)}$$
+
+
+
+If we had $100$ tokens instead of just $2$, our input matrix would be $100 \times 2$, multiplying smoothly against the exact same $2 \times 2$ weight matrix to spit out a brand new $100 \times 2$ Query matrix. The weight matrix size never changes—it acts like a universal translator tailored strictly to the head's dimension width ($d_k$), no matter how long your prompt sequence grows!
+
+For Head 1, let's assume gradient descent successfully tuned these $2 \times 2$ matrices to look like this:
+
+$$W_Q = \begin{pmatrix} 1 & 0 \\\\ 0 & 1 \end{pmatrix}, \quad W_K = \begin{pmatrix} 1 & 1 \\\\ 0 & 1 \end{pmatrix}, \quad W_V = \begin{pmatrix} 2 & 0 \\\\ 0 & 2 \end{pmatrix}$$
 
 ---
 
