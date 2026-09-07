@@ -46,7 +46,7 @@ Modern efficient models often stack layers like:
 \*MLA doesn't change FLOPs, reduces memory reads.
 
 ### Why NVIDIA "likes" Mamba more
-- Mamba's state is a **small vector** ($\sim$64–128 dims) — fits neatly into GPU SRAM tiles.
+- Mamba's state is a **small vector** (~64--128 dims) — fits neatly into GPU SRAM tiles.
 - Scalar recurrence maps to GPU scalar units cleanly.
 - KDA / DeltaNet maintain a **matrix** $S_t \in \mathbb{R}^{d_k \times d_v}$ per head — larger, harder to tile, more register pressure.
 - So NVIDIA tooling (cuDNN, TensorRT) optimizes for Mamba-style kernels first.
