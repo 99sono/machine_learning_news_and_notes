@@ -67,7 +67,7 @@ Consider an input prompt string mapped to discrete token indices, corresponding 
 
 $$\text{Prompt: } \text{"I love"} \longrightarrow \text{Target Prediction: } \text{"You"}$$
 
-Let $\mathbf{x}_t \in \mathbb{R}^{d_{\text{model}}}$ denote the continuous embedding vector representation of the token at sequence index $t$. The sequence of input tokens is indexed explicitly as:
+Let $\mathbf{x}_t \in \mathbb{R}^{d}$ denote the continuous embedding vector representation of the token at sequence index $t$. The sequence of input tokens is indexed explicitly as:
 
 * $\mathbf{x}_1$: Embedding vector for `"I"`
 * $\mathbf{x}_2$: Embedding vector for `"love"`
@@ -76,6 +76,7 @@ Let $\mathbf{x}_t \in \mathbb{R}^{d_{\text{model}}}$ denote the continuous embed
 ### Standard Attention (Single-Head Formulation)
 
 Let the input matrix representation of the sequence be $X \in \mathbb{R}^{N \times d_{\text{model}}}$. The linear projection matrices are defined as $W_Q, W_K \in \mathbb{R}^{d_{\text{model}} \times d_k}$ and $W_V \in \mathbb{R}^{d_{\text{model}} \times d_v}$.
+
 
 $$Q = XW_Q, \quad K = XW_K, \quad V = XW_V$$
 
