@@ -2,136 +2,147 @@
 
 ## 1. The Autoregressive Setup
 
-Neural language models are **autoregressive systems**: they generate text one token at a time, left to right.
+Neural language models function as **autoregressive systems**: they generate discrete token sequences sequentially, one position at a time from left to right.
 
-Given a prompt, the model does two phases:
+Given an input prompt of length $N$, processing occurs across two distinct computational phases:
 
-### Phase A: Prefill (the "mega computation")
-- Processes the **entire prompt at once** — all tokens in parallel.
-- Computes every layer's output for every position.
-- **Computationally heavy**: matrix multiplications over the full sequence length $N$.
-- Equivalent to: "reading and understanding the user's message."
+### Phase A: Prefill (The Parallel Computation Phase)
 
-### Phase B: Decode (generation)
-- Generates **one new token** at a time.
-- Each new token depends on all previous ones (autoregressive).
-- Repeated until stop token or max length.
-- **Memory-bandwidth bound**, not compute-bound — the KV cache dominates.
+* Processes the **entire prompt sequence simultaneously** in parallel across all layers.
+* Computes vector representations, query-key-value projections, and intermediate activations for every position $t \in \{1, \dots, N\}$.
+* **Computationally heavy**: Dominated by dense matrix-matrix multiplications ($GEMM$) scaling quadratically with sequence length $N$.
+* **Functional definition**: Corresponds to reading and encoding the global context of the user's message.
+
+### Phase B: Decode (The Autoregressive Generation Phase)
+
+* Generates **a single new token** per forward pass.
+* Each newly predicted token depends autoregressively on all historical tokens generated up to that step.
+* Iterates sequentially until a termination token or maximum length constraint is reached.
+* **Memory-bandwidth bound**: Limited by memory throughput (loading weights and the Key-Value cache from High-Bandwidth Memory) rather than raw floating-point compute capacity.
 
 ---
 
 ## 2. The Architecture Chain (Hybrid Design)
 
-Modern efficient models often stack layers like:
+Modern efficient architectures interleave linear recurrence layers with periodic global attention layers:
 
+$$\underbrace{[\text{Linear Attention Layer}] \times M}_{\text{Cheap propagation, bounded state}} \longrightarrow \underbrace{[\text{Global/Full Attention or MLA Layer}]}_{\text{Precise lossless global retrieval}} \longrightarrow \text{repeat}$$
 
-[Linear Attention Layer] × N  →  [Global/Full Attention or MLA Layer]  →  repeat
-
-- **Linear layers** (KDA, GatedDeltaNet, Mamba): cheap per-token, bounded state, good for propagation.
-- **Global/MLA layer**: periodic "reset" or anchor for precise retrieval (lossless key-value access).
-- The ratio (e.g., 5:1 KDA:MLA in Ling-3.0) balances cost vs. recall.
-
----
-
-## 3. The Algorithms (Subjective Evaluation)
-
-| Mechanism | Type | State Size | Per-Token Gen | Total Seq | Inductive Bias | Hardware Fit |
-|---|---|---|---|---|---|---|
-| **Standard Attention** | Softmax $QK^T$ | $O(N)$ KV cache | $O(N)$ | $O(N^2)$ | Strong, explicit | Tensor cores, FlashAttention |
-| **GatedDeltaNet** (Qwen) | Linear recurrent | $d_k \times d_v$ per head | $O(1)$ | $O(N)$ | Associative, scalar gate | Good, simpler state |
-| **KDA** (Kimi) | Linear + diagonal gating | $d_k \times d_v$ per head | $O(1)$ | $O(N)$ | Stronger recall, per-channel decay | Good but heavier state |
-| **Mamba / SSM** | Selective state-space | Vector $\mathbb{R}^{N_{\text{state}}}$ | $O(1)$ | $O(N)$ | Weak retrieval, strong compression | **Excellent** — small state fits SRAM |
-| **MLA** (DeepSeek) | KV-cache compression | Latent $d_c \ll d$ | $O(1)$* | $O(N)$ | Retrieval via projection | HBM bandwidth saver |
-
-\*MLA doesn't change FLOPs, reduces memory reads.
-
-### Why NVIDIA "likes" Mamba more
-- Mamba's state is a **small vector** (~64--128 dims) — fits neatly into GPU SRAM tiles.
-- Scalar recurrence maps to GPU scalar units cleanly.
-- KDA / DeltaNet maintain a **matrix** $S_t \in \mathbb{R}^{d_k \times d_v}$ per head — larger, harder to tile, more register pressure.
-- So NVIDIA tooling (cuDNN, TensorRT) optimizes for Mamba-style kernels first.
-
-### Why Qwen iterates on GatedDeltaNet, not KDA
-- GatedDeltaNet is the **ancestor**: scalar gate $\alpha_t \in \mathbb{R}$, simpler.
-- KDA adds **diagonal gating** $\text{Diag}(\alpha_t) \in \mathbb{R}^{d_k}$ — more parameters, more expressivity, more complexity.
-- Qwen likely prefers: "good enough recall + simpler kernel" over "better recall + heavier state."
-- They've released multiple DeltaNet variants (DeltaNet → GatedDeltaNet → ...), suggesting incremental refinement, not a leap to KDA.
-
-### Which linear mechanism is more costly?
-- **KDA** is the most expensive per layer (largest recurrent state).
-- **GatedDeltaNet** sits in the middle.
-- **Mamba** is cheapest in state memory but weaker at retrieval.
-- Trade-off: **recall quality vs. hardware efficiency**.
+* **Linear recurrent layers** (e.g., KDA, GatedDeltaNet, Mamba): Maintain a fixed-size internal state, yield $O(1)$ per-token generation complexity, and efficiently propagate local context.
+* **Global/MLA layers**: Act as periodic structural anchors that provide lossless key-value retrieval and correct long-range dependencies.
+* **Stacking Ratio**: An engineered ratio (e.g., a 5:1 KDA-to-MLA ratio in Ling-3.0) optimizes the trade-off between computational efficiency and retrieval accuracy.
 
 ---
 
-## 4. Mathematical Notation (Mock Example)
+## 3. The Algorithms (Comparative Evaluation)
 
-Prompt: `"I love"` → predict `"You"`
+| Mechanism | Mathematical Type | Recurrent State Dimension | Per-Token Gen Cost | Total Seq Complexity | Inductive Bias | Hardware Acceleration Fit |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Standard Attention** | Softmax $QK^T$ | $O(N)$ KV cache | $O(N)$ | $O(N^2)$ | Strong, dense global pairing | Highly optimized for Tensor Cores (FlashAttention) |
+| **GatedDeltaNet** (Qwen) | Linear recurrent | Matrix $S_t \in \mathbb{R}^{d_k \times d_v}$ per head | $O(1)$ | $O(N)$ | Associative recall via scalar gating | Efficient; simpler scalar state updates |
+| **KDA** (Kimi) | Linear + diagonal gating | Matrix $S_t \in \mathbb{R}^{d_k \times d_v}$ per head | $O(1)$ | $O(N)$ | Stronger retrieval via channel-wise decay | Efficient, though higher register pressure |
+| **Mamba / SSM** | Selective State-Space | Vector $\mathbf{h}_t \in \mathbb{R}^{N_{\text{state}}}$ | $O(1)$ | $O(N)$ | Strong sequence compression, weaker exact retrieval | **Optimal** — compact state fits entirely in SRAM |
+| **MLA** (DeepSeek) | Low-rank KV compression | Latent vector $\mathbf{c}_t^{\text{KV}} \in \mathbb{R}^{d_c}$ | $O(1)$* | $O(N)$ | Retrieval via low-rank projections | Eliminates HBM bandwidth bottlenecks |
 
-Tokens: $x_1 = \text{"I"},\; x_2 = \text{"love"},\; x_3 = \text{"You"}$ (to be predicted)
+**Note: MLA does not alter theoretical asymptotic FLOP counts; it reduces memory bandwidth overhead during decoding.*
 
-### Standard Attention (one head简化)
+### Why NVIDIA Hardware Optimizes for Mamba-First
 
-$$
-Q = XW_Q,\quad K = XW_K,\quad V = XW_V
-$$
+* Mamba's hidden state is represented as a **compact vector** ($\mathbf{h}_t \in \mathbb{R}^{N_{\text{state}}}$ where $N_{\text{state}} \in [64, 128]$), allowing the entire recurrence state to reside directly within fast on-chip SRAM tiles.
+* Scalar state-space transitions map cleanly onto hardware scalar execution units.
+* Conversely, KDA and GatedDeltaNet maintain a **full matrix** $S_t \in \mathbb{R}^{d_k \times d_v}$ per attention head, resulting in higher register pressure, larger memory footprints, and more complex tiling requirements.
+* Consequently, low-level compilation toolchains (e.g., cuDNN, TensorRT-LLM) natively prioritize Mamba-style state-space operator kernels.
 
-$$
-\text{Attention}(Q,K,V) = \text{softmax}\!\left(\frac{QK^T}{\sqrt{d_k}}\right)V
-$$
+### Why Qwen Iterates on GatedDeltaNet over KDA
 
-- $QK^T$ is $N \times N \rightarrow O(N^2)$ — the bottleneck.
+* GatedDeltaNet utilizes a scalar decay gate ($\alpha_t \in \mathbb{R}$), representing a simpler architectural baseline.
+* KDA extends this formulation by introducing channel-wise diagonal gating ($\text{Diag}(\boldsymbol{\alpha}_t) \in \mathbb{R}^{d_k \times d_k}$), which increases parameter expressivity at the cost of implementation complexity.
+* Qwen prioritizes engineering stability and hardware kernel simplicity ("sufficient retrieval with streamlined kernels") over maximal theoretical state capacity.
 
-### Linear Recurrent (KDA / GatedDeltaNet)
+---
 
-Maintain state $S_t \in \mathbb{R}^{d_k \times d_v}$:
+## 4. Mathematical Notation (Rigorous Formulation)
 
-**GatedDeltaNet:**
+Consider an input prompt string mapped to discrete token indices, corresponding to the sequence:
 
-$$
-S_t = (I - \beta_t k_t k_t^T)\,\alpha_t\, S_{t-1} + \beta_t k_t v_t^T \quad (\alpha_t \in \mathbb{R})
-$$
 
-**KDA:**
+$$\text{Prompt: } \text{"I love"} \longrightarrow \text{Target Prediction: } \text{"You"}$$
 
-$$
-S_t = (I - \beta_t k_t k_t^T)\,\text{Diag}(\alpha_t)\, S_{t-1} + \beta_t k_t v_t^T \quad (\alpha_t \in \mathbb{R}^{d_k})
-$$
+Let $\mathbf{x}_t \in \mathbb{R}^{d_{\text{model}}}$ denote the continuous embedding vector representation of the token at sequence index $t$. The sequence of input tokens is indexed explicitly as:
 
-Output at step $t$:
+* $\mathbf{x}_1$: Embedding vector for `"I"`
+* $\mathbf{x}_2$: Embedding vector for `"love"`
+* $\mathbf{x}_3$: Embedding vector for `"You"` (the target token to be predicted)
 
-$$
-o_t = S_t\, q_t
-$$
+### Standard Attention (Single-Head Formulation)
 
-For $t=3$ (predicting "You"):
-- Input: $x_1, x_2$ already processed $\rightarrow$ state $S_2$ exists.
-- New token $x_3$ uses $q_3$, updates to $S_3$, outputs logits over vocabulary.
-- The "I love" context is compressed into $S_2$; no need to re-read all previous tokens.
+Let the input matrix representation of the sequence be $X \in \mathbb{R}^{N \times d_{\text{model}}}$. The linear projection matrices are defined as $W_Q, W_K \in \mathbb{R}^{d_{\text{model}} \times d_k}$ and $W_V \in \mathbb{R}^{d_{\text{model}} \times d_v}$.
 
-### MLA (compressed cache)
+$$Q = XW_Q, \quad K = XW_K, \quad V = XW_V$$
 
-Instead of storing full $K, V$ matrices, store latent:
+$$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
 
-$$
-c_t^{KV} = W_{c}[K_t; V_t] \in \mathbb{R}^{d_c}
-$$
+* **Complexity Bottleneck:** The matrix product $QK^T$ yields an $N \times N$ matrix, driving computational complexity to $O(N^2)$.
 
-During decode, load $c_t^{KV}$ (small) instead of full $K, V$ (large) $\rightarrow$ less HBM traffic.
+### Linear Recurrent Mechanisms (KDA / GatedDeltaNet)
+
+Instead of retaining historical keys and values, these models maintain a fixed-size internal recurrent state matrix $S_t \in \mathbb{R}^{d_k \times d_v}$ per head.
+
+**GatedDeltaNet Update Rule (Scalar Gating):**
+
+
+$$S_t = (I - \beta_t \mathbf{k}_t \mathbf{k}_t^T)\,\alpha_t\, S_{t-1} + \beta_t \mathbf{k}_t \mathbf{v}_t^T \quad \text{where } \alpha_t \in \mathbb{R}$$
+
+**KDA Update Rule (Diagonal Gating):**
+
+
+$$S_t = (I - \beta_t \mathbf{k}_t \mathbf{k}_t^T)\,\text{Diag}(\boldsymbol{\alpha}_t)\, S_{t-1} + \beta_t \mathbf{k}_t \mathbf{v}_t^T \quad \text{where } \boldsymbol{\alpha}_t \in \mathbb{R}^{d_k}$$
+
+**Recurrent Output Projection at Step $t$:**
+
+
+$$\mathbf{o}_t = S_t\, \mathbf{q}_t$$
+
+**Instantiation at $t = 3$ (Predicting $\mathbf{x}_3$ = `"You"`):**
+
+* The historical context vectors $\mathbf{x}_1$ and $\mathbf{x}_2$ have already been compressed into the recurrent state matrix $S_2$.
+* When processing the incoming query vector $\mathbf{q}_3$, the model updates the state to $S_3$ and computes output logits over the vocabulary without re-scanning past tokens.
+
+### Multi-head Latent Attention (MLA) Compression
+
+MLA compresses explicit Key-Value caches via low-rank projections. Rather than storing full matrices $K_t, V_t \in \mathbb{R}^{N \times d}$, it projects them into a shared latent vector space:
+
+
+$$\mathbf{c}_t^{\text{KV}} = W_c [K_t; V_t] \in \mathbb{R}^{d_c} \quad \text{where } d_c \ll d$$
+
+
+During autoregressive decoding, memory traffic is minimized by fetching the compressed latent vector $\mathbf{c}_t^{\text{KV}}$ from High-Bandwidth Memory instead of uncompressed multi-head tensors.
 
 ---
 
 ## 5. Summary Cheat Sheet
 
-- **Prefill**: process all prompt tokens in parallel, heavy compute.
-- **Decode**: one token at a time, memory-bandwidth bound.
-- **Linear attention** (KDA, GatedDeltaNet, Mamba): $O(1)$ per token, fixed state, replaces $O(N^2)$ softmax.
-- **MLA**: compresses KV cache, saves bandwidth, not FLOPs.
-- **Hybrid**: linear layers for cheap propagation + occasional global/MLA for precise recall.
-- **NVIDIA** prefers Mamba (small state, SRAM-friendly).
-- **Qwen** prefers GatedDeltaNet (simplicity, sufficient).
-- **KDA** offers better retrieval at higher state cost.
+* **Prefill Phase:** Parallel processing of prompt tokens; dominated by heavy matrix multiplications ($O(N^2)$).
+* **Decode Phase:** Sequential single-token generation; bounded by memory bandwidth.
+* **Linear Attention Layers:** Achieve $O(1)$ per-token generation complexity via fixed-size recurrent states ($S_t$).
+* **MLA:** Low-rank KV cache compression designed to mitigate memory-bandwidth constraints.
+* **Hybrid Architecture:** Couples linear recurrent layers for efficient token propagation with periodic global/MLA layers for exact long-range retrieval.
 
-The field is converging on: *keep attention's retrieval strength, but compress its memory cost via linear recurrence + KV compression.*
+---
 
+## Appendix: Mathematical Notation Reference
+
+| Symbol / Notation | Mathematical Definition / Meaning |
+| --- | --- |
+| $N$ | Total sequence length (number of tokens in the input context). |
+| $d_{\text{model}}$ | Hidden dimensionality of the model's transformer representation space. |
+| $d_k, d_v$ | Dimensionality of the Query/Key subspaces and Value subspaces, respectively. |
+| $\mathbf{x}_t \in \mathbb{R}^{d_{\text{model}}}$ | Column vector representing the embedding or hidden state at sequence position $t$. |
+| $X \in \mathbb{R}^{N \times d_{\text{model}}}$ | Matrix formed by stacking sequence token vectors row-wise. |
+| $Q, K, V$ | Query, Key, and Value matrices derived via linear projections of $X$. |
+| $\mathbf{q}_t, \mathbf{k}_t, \mathbf{v}_t$ | Vector representations of Query, Key, and Value at a specific time step $t$. |
+| $S_t \in \mathbb{R}^{d_k \times d_v}$ | Recurrent state matrix maintained across time steps in linear attention models. |
+| $\alpha_t \in \mathbb{R}$ / $\boldsymbol{\alpha}_t \in \mathbb{R}^{d_k}$ | Scalar decay factor or channel-wise diagonal decay vector governing state persistence. |
+| $\beta_t \in \mathbb{R}$ | Step-size or update gating coefficient in delta-rule recurrent formulations. |
+| $\text{Diag}(\cdot)$ | Operator constructing a diagonal matrix from a vector input. |
+| $O(1), O(N), O(N^2)$ | Asymptotic computational complexity bounds using Big-O notation. |
