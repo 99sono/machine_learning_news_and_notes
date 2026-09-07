@@ -105,16 +105,16 @@ Now, Head 1 multiplies its baby input matrix $X_{\text{head1}}$ by its weight ma
 
 ### Step A: The Value Vectors ($V$)
 
-$$V = X_{\text{head1}} W_V = \begin{pmatrix} 1 & 1 \\ 2 & 2 \end{pmatrix} \begin{pmatrix} 2 & 0 \\ 0 & 2 \end{pmatrix} = \begin{pmatrix} 2 & 2 \\ 4 & 4 \end{pmatrix}$$
+$$V = X_{\text{head1}} W_V = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 2 & 0 \\\\ 0 & 2 \end{pmatrix} = \begin{pmatrix} 2 & 2 \\\\ 4 & 4 \end{pmatrix}$$
 
 
 *Meaning:* These are the refined semantic content payloads for `"I"` and `"love"` ready to be shared.
 
 ### Step B: The Query ($Q$) and Key ($K$) Vectors
 
-$$Q = X_{\text{head1}} W_Q = \begin{pmatrix} 1 & 1 \\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & 1 \\ 2 & 2 \end{pmatrix}$$
+$$Q = X_{\text{head1}} W_Q = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 0 \\\\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix}$$
 
-$$K = X_{\text{head1}} W_K = \begin{pmatrix} 1 & 1 \\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & 2 \\ 2 & 4 \end{pmatrix}$$
+$$K = X_{\text{head1}} W_K = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 1 \\\\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & 2 \\\\ 2 & 4 \end{pmatrix}$$
 
 ---
 
