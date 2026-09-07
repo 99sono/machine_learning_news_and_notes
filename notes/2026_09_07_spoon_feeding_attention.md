@@ -179,9 +179,6 @@ $$
 \text{Attention Scores} = \begin{pmatrix} 0.2 & 0.8 \\\\ 0.1 & 0.9 \end{pmatrix}
 $$
 
-*Read this grid like this:*
-* Token 1 (`"I"`) spends 20% of its attention on itself and 80% on `"love"`.
-* Token 2 (`"love"`) spends 10% of its attention on `"I"` and 90% on itself.
 
 *Read this grid like this:*
 * Token 1 (`"I"`) spends 20% of its attention on itself and 80% on `"love"`.
