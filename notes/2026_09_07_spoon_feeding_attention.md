@@ -6,15 +6,22 @@ In our prompt context right now, we only have so far **two tokens**: the token *
 
 Before we can ever get to predicting the token "you", we first need to go to the gym and calculate the so-called attention for `"I love"` across all the attention layers of our network. The underlying math is identical for every single layer, so we can just pretend that our input `"I love"` is hitting the **very first global attention layer** of our model.
 
-To understand how this works, let's first introduce some notation. It will look confusing at first glance, but it will become completely simple and logical as we go along.
-
-Don't worry about the big words—let's break down the notation one piece at a time:
+To understand how this works, let's first introduce our notation glossary. Don't worry if these terms look abstract right now; they will become completely intuitive as we walk through the math:
 
 * **$N$ (Sequence Length):** In our example here, this refers to the number of tokens currently in our prompt context: just `"I"` and `"love"`. Therefore, our sequence length is $N = 2$. *(Note: In real tokenizers, tokens aren't always whole words—they can be sub-words or syllables—but for learning purposes, pretending tokens are words makes things much easier to digest).*
-* **$d_{\text{model}}$ (Hidden Dimension):** The total number of numerical features our model uses to describe any single token. For our spoon-fed example, we will keep it tiny and set $d_{\text{model}} = 4$.
-* **$h$ (Number of Attention Heads):** The model can split its work into parallel lanes called heads. Let's say we have **2 attention heads** ($h = 2$).
-* **$d_k$ (Head Subspace Dimension):** Because we split our total dimensions ($4$) across our attention heads ($2$), each head only gets a small slice of size $d_k = 4 / 2 = 2$.
-* **$X$ (Input Matrix):** The big matrix that holds all our token vectors stacked together.
+* **$d_{\text{model}}$ (Hidden Dimension):** To put this in even simpler terms: if `"I"` is our very first token and it must be represented as a vector, our $d_{\text{model}}$ being $4$ implies that our `"I"` will be a little vector with just 4 dimensions. For example, `"I"` could be the vector $(1, 1, 1, 1)$. And `"love"` would be another vector of dimension $4$ with different values, such as $(2, 2, 2, 2)$. *Note on numbers:* These dimensions aren't just whole integer numbers; each dimension can be any real number floating in $\mathbb{R}^{d_{\text{model}}}$.
+* **$h$ (Number of Attention Heads):** When we think about 1 global attention layer, we can think of it as a factory of correlations between tokens. Each head is a different floor of that factory that allows the math to run in parallel. A global attention mechanism with a single head looks at everything through one lens, but splitting it into multiple heads lets the model analyze different relationships simultaneously across parallel lanes.
+* **The Important Catch ($h$ must divide cleanly):** $h$ cannot be just any arbitrary number. It must be a number that can divide cleanly into the total number of dimensions of our token vector ($d_{\text{model}}$).
+* If our vector has $4$ dimensions per token, the allowed number of attention heads are:
+* **$h = 1$:** The $4$ dimensions are not divided at all; all computations happen in a monolithic block, so our vector $(1, 1, 1, 1)$ stays exactly $(1, 1, 1, 1)$.
+* **$h = 2$:** Our input tokens are sliced up into two dimensions each, splitting $(1, 1, 1, 1)$ into chunks of $(1, 1)$ and $(1, 1)$.
+* **$h = 4$:** Each input vector is sliced down to a single dimension of size $1$, splitting $(1, 1, 1, 1)$ into four separate $1$-dimensional values.
+* For our example, we will choose **$h = 2$** attention heads.
+
+
+
+
+* **$X$ (Input Matrix):** A matrix where each row (or column, depending on convention) represents a prompt input token vector. Here, $X$ stacks our tokens $\mathbf{x}_1$ and $\mathbf{x}_2$ together into one neat table.
 * **$W_Q, W_K, W_V$ (Weight Matrices):** The magical, heavy-duty weight matrices that start out as random garbage noise and are trained via gradient descent to become elite routing tools.
 
 Now that our glossary is set, let's trace exactly how the input vector flows through this first global attention layer, ignoring the decode phase entirely and focusing strictly on this prefill warmup.
@@ -39,14 +46,14 @@ $$X = \begin{pmatrix} 1 & 1 & 1 & 1 \\ 2 & 2 & 2 & 2 \end{pmatrix}$$
 
 ## 2. The Architectural Design: Splitting Into "Baby Matrices"
 
-A neural network can theoretically have any number of global attention heads—it is a pure design choice made by the engineers. Since our model has **2 attention heads** ($h = 2$), and our total dimension is $4$, each head gets allocated a slice of **2 dimensions** ($4 / 2 = 2$).
+Since our model has **2 attention heads** ($h = 2$), and our total dimension is $4$, each head gets allocated a slice of **2 dimensions** ($4 / 2 = 2$).
 
 We call these sliced sub-components **"baby matrices."**
 
 * **Head 1** handles dimensions 1 and 2.
 * **Head 2** handles dimensions 3 and 4.
 
-Instead of processing all 4 dimensions in one giant, messy calculation, the model runs Head 1 and Head 2 simultaneously in parallel lanes. Let's trace what happens inside **Head 1** (dimensions 1 and 2).
+Instead of processing all 4 dimensions in one giant, messy calculation, the model runs Head 1 and Head 2 simultaneously in parallel factory floors. Let's trace what happens inside **Head 1** (dimensions 1 and 2).
 
 First, Head 1 extracts its slice of the input tokens, creating our "baby input" matrix for Head 1:
 
