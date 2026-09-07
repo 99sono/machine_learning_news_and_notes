@@ -45,7 +45,7 @@ $$
 
 
 **Note on Conventions:** Unadorned vectors like ($\mathbf{x}$) default to column vectors in pure linear algebra. However, transformer literature frequently treats them as row vectors when stacked into $X$, or uses explicit transposes ($\mathbf{x}^T$) for horizontal rows.
-test02
+
 
 In this layout, each row represents a separate token ($\mathbf{x}_1, \mathbf{x}_2$), which is the standard convention in deep learning frameworks where $X$ has shape $\text{Sequence Length} \times d_3{\text{model}}$. 
 
