@@ -98,23 +98,41 @@ For Head 1, let's assume gradient descent successfully tuned these $2 \times 2$ 
 $$W_Q = \begin{pmatrix} 1 & 0 \\\\ 0 & 1 \end{pmatrix}, \quad W_K = \begin{pmatrix} 1 & 1 \\\\ 0 & 1 \end{pmatrix}, \quad W_V = \begin{pmatrix} 2 & 0 \\\\ 0 & 2 \end{pmatrix}$$
 
 ---
-
 ## 4. Computing Queries ($Q$), Keys ($K$), and Values ($V$)
 
 Now, Head 1 multiplies its baby input matrix $X_{\text{head1}}$ by its weight matrices. This transforms our raw tokens into Queries, Keys, and Values:
 
-### Step A: The Value Vectors ($V$)
+### Step A: The Value Vectors ($V$) — *The Content Payload*
 
-$$V = X_{\text{head1}} W_V = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 2 & 0 \\\\ 0 & 2 \end{pmatrix} = \begin{pmatrix} 2 & 2 \\\\ 4 & 4 \end{pmatrix}$$
+$$
+V = X_{\text{head1}} W_V = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 2 & 0 \\\\ 0 & 2 \end{pmatrix} = \begin{pmatrix} 2 & 2 \\\\ 4 & 4 \end{pmatrix}
+$$
 
+* **Intuition:** Think of $W_V$ as a **feature amplifier and modifier**. By multiplying the input features by $W_V$, the model selectively amplifies certain characteristics of the word while attenuating others. For example, it takes `"I"` $(1, 1)$ and transforms it into a richer content payload $(2, 2)$, packaging up the word's actual semantic meaning ready to be shared with other tokens.
 
-*Meaning:* These are the refined semantic content payloads for `"I"` and `"love"` ready to be shared.
+### Step B: The Query ($Q$) and Key ($K$) Vectors — *The Address Tags and Search Radar*
 
-### Step B: The Query ($Q$) and Key ($K$) Vectors
+$$
+Q = X_{\text{head1}} W_Q = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 0 \\\\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix}
+$$
 
-$$Q = X_{\text{head1}} W_Q = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 0 \\\\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix}$$
+$$
+K = X_{\text{head1}} W_K = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 1 \\\\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & 2 \\\\ 2 & 4 \end{pmatrix}
+$$
 
-$$K = X_{\text{head1}} W_K = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 1 \\\\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & 2 \\\\ 2 & 4 \end{pmatrix}$$
+* **Intuition for Keys ($K$):** Think of the Key matrix ($W_K$) as an **id badge generator**. When token 2 (`"love"`) multiplies against $W_K$, it produces a Key vector $(2, 4)$ that acts like a public broadcast tag: *"Hey, I am a verb, I represent an emotion, and I link well with subject pronouns."*
+* **Intuition for Queries ($Q$):** Think of the Query matrix ($W_Q$) as a **radar scanner or a question generator**. When token 1 (`"I"`) multiplies against $W_Q$, it produces a Query vector $(1, 1)$ that acts like a question: *"I am looking for actions or verbs that connect back to me as a subject."*
+
+---
+
+> **A Crucial Engineering Note (What Actually Gets Cached?):**
+> When people talk about saving compute time and storing things in the **KV cache** during the prefill phase, notice that **only the Keys ($K$) and Values ($V$) get saved**.
+> * Why not Queries ($Q$)? Because Queries are prompt-specific questions used right now to figure out immediate relationships.
+> * Once the model moves to the decode phase and starts generating new tokens one by one (like predicting `"you"`), it doesn't need old Queries. It only needs the pre-computed **Keys and Values** of the past tokens (`"I"` and `"love"`) so the new token can instantly shoot out its own Query and cross-compare against them without recalculating the past from scratch!
+
+---
+
+Naturally, this is the linear algebra taking place in Head 1 of global attention layer 1, but Head 2 would do similar parallel algebra for the remaining dimensions.
 
 ---
 
