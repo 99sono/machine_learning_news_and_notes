@@ -144,14 +144,14 @@ Naturally, this is the linear algebra taking place in Head 1 of global attention
 
 To find out how much attention token 1 should pay to token 2 (and itself), we take the dot product of Queries and transposed Keys ($QK^T$). This creates an $N \times N$ correlation grid ($2 \times 2$ in our case):
 
-$$QK^T = \begin{pmatrix} 1 & 1 \\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 2 \\ 2 & 4 \end{pmatrix}^T = \begin{pmatrix} 1 & 1 \\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 2 \\ 2 & 4 \end{pmatrix} = \begin{pmatrix} 3 & 6 \\ 6 & 12 \end{pmatrix}$$
+$$QK^T = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 2 \\\\ 2 & 4 \end{pmatrix}^T = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 2 \\\\ 2 & 4 \end{pmatrix} = \begin{pmatrix} 3 & 6 \\\\ 6 & 12 \end{pmatrix}$$
 
 Next, the model scales this grid down by dividing by $\sqrt{d_k}$ (here $\sqrt{2} \approx 1.41$) to keep numbers stable, and runs it through a **softmax** function. Softmax turns those raw scores into clean percentages (probabilities that sum to 1).
 
 Let's assume our softmax matrix turns into clean attention weights:
 
 
-$$\text{Attention Scores} = \begin{pmatrix} 0.2 & 0.8 \\ 0.1 & 0.9 \end{pmatrix}$$
+$$\text{Attention Scores} = \begin{pmatrix} 0.2 & 0.8 \\\\ 0.1 & 0.9 \end{pmatrix}$$
 
 
 *Read this grid like this:*
@@ -165,7 +165,7 @@ $$\text{Attention Scores} = \begin{pmatrix} 0.2 & 0.8 \\ 0.1 & 0.9 \end{pmatrix}
 
 The final step of Head 1 takes our attention percentage grid and multiplies it by our Value matrix ($V$):
 
-$$\text{Output} = (\text{Attention Scores}) \times V = \begin{pmatrix} 0.2 & 0.8 \\ 0.1 & 0.9 \end{pmatrix} \begin{pmatrix} 2 & 2 \\ 4 & 4 \end{pmatrix} = \begin{pmatrix} 3.6 & 3.6 \\ 3.8 & 3.8 \end{pmatrix}$$
+$$\text{Output} = (\text{Attention Scores}) \times V = \begin{pmatrix} 0.2 & 0.8 \\\\ 0.1 & 0.9 \end{pmatrix} \begin{pmatrix} 2 & 2 \\\\ 4 & 4 \end{pmatrix} = \begin{pmatrix} 3.6 & 3.6 \\\\ 3.8 & 3.8 \end{pmatrix}$$
 
 Head 1 has successfully taken raw input tokens, routed them through trained weight matrices, cross-compared them via Queries and Keys, and outputted brand-new, context-infused representations. Head 2 is doing the exact same thing in parallel on dimensions 3 and 4.
 
