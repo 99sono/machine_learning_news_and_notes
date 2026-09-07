@@ -98,6 +98,7 @@ For Head 1, let's assume gradient descent successfully tuned these $2 \times 2$ 
 $$W_Q = \begin{pmatrix} 1 & 0 \\\\ 0 & 1 \end{pmatrix}, \quad W_K = \begin{pmatrix} 1 & 1 \\\\ 0 & 1 \end{pmatrix}, \quad W_V = \begin{pmatrix} 2 & 0 \\\\ 0 & 2 \end{pmatrix}$$
 
 ---
+
 ## 4. Computing Queries ($Q$), Keys ($K$), and Values ($V$)
 
 Now, Head 1 multiplies its baby input matrix $X_{\text{head1}}$ by its weight matrices. This transforms our raw tokens into Queries, Keys, and Values:
@@ -108,7 +109,8 @@ $$
 V = X_{\text{head1}} W_V = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 2 & 0 \\\\ 0 & 2 \end{pmatrix} = \begin{pmatrix} 2 & 2 \\\\ 4 & 4 \end{pmatrix}
 $$
 
-* **Intuition:** Think of $W_V$ as a **feature amplifier and modifier**. By multiplying the input features by $W_V$, the model selectively amplifies certain characteristics of the word while attenuating others. For example, it takes `"I"` $(1, 1)$ and transforms it into a richer content payload $(2, 2)$, packaging up the word's actual semantic meaning ready to be shared with other tokens.
+* **The Eloquent View:** Think of $W_V$ as a **feature amplifier and modifier**. By multiplying the input features by $W_V$, the model selectively amplifies certain characteristics of the word while attenuating others. For example, it takes `"I"` $(1, 1)$ and transforms it into a richer content payload $(2, 2)$, packaging up the word's actual semantic meaning ready to be shared with other tokens.
+* **The Caveman Speed-Dating Analogy:** Think of the Value matrix as the **facade or outfit change** before stepping into the room. If a token is a rich kid going to a speed-dating event, the Value matrix gets him to wear an Armani suit and a Rolex to shape what he actually brings to the table. 
 
 ### Step B: The Query ($Q$) and Key ($K$) Vectors — *The Address Tags and Search Radar*
 
@@ -120,8 +122,10 @@ $$
 K = X_{\text{head1}} W_K = \begin{pmatrix} 1 & 1 \\\\ 2 & 2 \end{pmatrix} \begin{pmatrix} 1 & 1 \\\\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & 2 \\\\ 2 & 4 \end{pmatrix}
 $$
 
-* **Intuition for Keys ($K$):** Think of the Key matrix ($W_K$) as an **id badge generator**. When token 2 (`"love"`) multiplies against $W_K$, it produces a Key vector $(2, 4)$ that acts like a public broadcast tag: *"Hey, I am a verb, I represent an emotion, and I link well with subject pronouns."*
-* **Intuition for Queries ($Q$):** Think of the Query matrix ($W_Q$) as a **radar scanner or a question generator**. When token 1 (`"I"`) multiplies against $W_Q$, it produces a Query vector $(1, 1)$ that acts like a question: *"I am looking for actions or verbs that connect back to me as a subject."*
+* **The Eloquent View for Keys ($K$):** Think of the Key matrix ($W_K$) as an **id badge generator**. When token 2 (`"love"`) multiplies against $W_K$, it produces a Key vector $(2, 4)$ that acts like a public broadcast tag: *"Hey, I am a verb, I represent an emotion, and I link well with subject pronouns."*
+* **The Caveman Speed-Dating Analogy for Keys ($K$):** This is the **public shouting part**. The superficial rich kid token yells out loud across the room: *"Hey girls, I am driving an Aston Martin today!"* 
+* **The Eloquent View for Queries ($Q$):** Think of the Query matrix ($W_Q$) as a **radar scanner or a question generator**. When token 1 (`"I"`) multiplies against $W_Q$, it produces a Query vector $(1, 1)$ that acts like a question: *"I am looking for actions or verbs that connect back to me as a subject."*
+* **The Caveman Speed-Dating Analogy for Queries ($Q$):** This is your **picker criteria**. The token scans the room saying: *"Just interested in blonde hair and blue eyes, intelligence is not required :D"* (or conversely, a token looking for depth might scan for substance, while someone else turns away from superficial flash).
 
 ---
 
