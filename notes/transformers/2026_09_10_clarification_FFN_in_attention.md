@@ -14,3 +14,11 @@ There are no "weights for the KV cache" to train.
  * Training: The model learns fixed weights—like the projection matrices (W_q, W_k, W_v) and the FFN weights.
  * KV Cache: This is purely a runtime memory buffer. When tokens pass through the layers during prefill, the model computes their Keys and Values using those trained W_k and W_v weights, and saves those resulting vectors into the cache so it doesn't have to recalculate them later during decoding.
 
+---
+No, FFN 1's output goes into the Attention block of Layer 2 (via the hidden stream), not straight into FFN 2. The path through the model always alternates:
+ * Layer 1: Attention 1 \rightarrow FFN 1
+ * Layer 2: Attention 2 \rightarrow FFN 2
+ * ...and so on.
+As for storage, FFN outputs are not stored in the KV cache. The KV cache strictly holds Keys and Values (K, V) for the attention mechanism so it can look them up later during decoding. FFN outputs flow forward to build the hidden state, but they aren't saved in that cache.
+Drop the phone and go get some well-deserved sleep. We can pick this right back up tomorrow when your brain is fully recharged! 🛏️
+
